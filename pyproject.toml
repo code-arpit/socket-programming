@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "chat-app"
+version = "0.1.0"
+description = ""
+authors = ["code-arpit <code.arpitjain@gmail.com>"]
+readme = "README.md"
+packages = [{include = "chat_app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+websockets-proxy = "^0.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest-black = "^0.3.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
