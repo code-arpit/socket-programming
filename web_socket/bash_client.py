@@ -17,7 +17,7 @@ async def hello():
                 )  # Send the user's message to the WebSocket server
                 response = await websocket.recv()  # Receive server response
                 print(f"Server Response: {response}")  # Print the server response
-            except websockets.ConnectionClosed():
+            except websockets.exceptions.ConnectionClosed():
                 continue
             except Exception as e:
                 raise e

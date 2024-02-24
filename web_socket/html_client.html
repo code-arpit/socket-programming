@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Example</title>
+  </head>
+  <body>
+    <h1>WebSocket Example</h1>
+    <input type="text" id="message" placeholder="Enter a message" />
+    <button id="send">Send</button>
+    <div id="output"></div>
+
+    <script>
+      let encoder = new TextEncoder()
+      const output = document.getElementById('output')
+      const messageInput = document.getElementById('message')
+      const sendButton = document.getElementById('send')
+      // Establish a connection.
+      const socket = new WebSocket('ws://localhost:8765')
+
+      socket.onopen = () => {
+        output.innerHTML += '<p>Connected to the server.</p>'
+      }
+
+      socket.onmessage = (event) => {
+        output.innerHTML += `<p>Server says: ${event.data}</p>`
+      }
+
+      socket.onclose = () => {
+        output.innerHTML += '<p>Connection closed.</p>'
+      }
+
+      sendButton.addEventListener('click', () => {
+        const message = messageInput.value
+        const encoded_message = encoder.encode(message)
+        console.log(encoded_message)
+        socket.send(encoded_message)
+        output.innerHTML += `<p>You say: ${message}</p>`
+        messageInput.value = ''
+      })
+    </script>
+  </body>
+</html>
