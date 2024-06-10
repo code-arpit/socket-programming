@@ -28,9 +28,28 @@ class ConnectionManager:
         if type == "root":
             self.root_connection = websocket
         else:
+            print(websocket.__dict__, "--------")
+            print(self.active_connections, "--------")
+            if websocket not in self.active_connections.values():
+                data={
+                    "message": "Hi! I am Whizzz AI. How can I help you?",
+                    "conversation_id": "",
+                    "message_id": "",
+                    "client_id": str(client_id),
+                    "client_port": client_port,
+                    "time": int(datetime.now().timestamp() * 1000),
+                    "sender": "AI",
+                }
+                try:
+                    import time
+                    time.sleep(5)
+                    await websocket.send_json(data)
+                except Exception as e:
+                    print(e)
             self.active_connections[
                 (str(client_id), conversation_id, client_port)
             ] = websocket
+            
 
     async def disconnect(
         self,
@@ -49,12 +68,20 @@ class ConnectionManager:
                 self.active_connections.pop(connection_key)
 
     async def receive(self, websocket: WebSocket):
-        received_data = await websocket.receive_text()
-        return received_data
+        while True:
+            received_data = await websocket.receive_text()
+            if not received_data:
+                ping = await websocket.keepalive_ping()
+            else:
+                return received_data
 
     async def receive_root(self):
-        received_data = await self.root_connection.receive_text()
-        return received_data
+        while True:
+            received_data = await self.root_connection.receive_text()
+            if not received_data:
+                ping = await self.root_connection.keepalive_ping()
+            else:
+                return received_data
 
     async def send_personal_json(
         self,
@@ -65,6 +92,7 @@ class ConnectionManager:
         client_port: int | None = None,
         status: str | None = None,
     ):
+        print("Sending data to client id ->", client_id, "conversation->", conversation_id, "port->", client_port, "=================")
         if client_id:
             websocket = self.active_connections.get(
                 (client_id, conversation_id, client_port), None
@@ -74,8 +102,12 @@ class ConnectionManager:
                     (client_id, "", client_port), None
                 )
             if websocket:
+                print("Sending data to client, -----------------------")
+                print(data)
                 await websocket.send_json(data)
         else:
+            print("Sending data to client, -----------++------------")
+            print(data)
             await websocket.send_json(data)
 
         # Importing necessary files here to avoid circular imports

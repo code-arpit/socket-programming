@@ -16,5 +16,5 @@ COPY dist/ /app/
 
 EXPOSE 8000
 
-CMD uvicorn main:app --reload --log-level info --host 0.0.0.0 --port 8000
+CMD uvicorn main:app --reload --log-level info --host 0.0.0.0 --port 8000 --ws-ping-interval 20 --ws-ping-timeout 10 
 # CMD gunicorn main:app --worker-class uvicorn.workers.UvicornWorker --workers 3 --bind 0.0.0.0:8000

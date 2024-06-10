@@ -6,6 +6,7 @@ from fastapi import (
     HTTPException,
     Header,
 )
+import asyncio
 from fastapi.responses import HTMLResponse
 from connection import connection_manager
 import uuid
@@ -96,7 +97,7 @@ async def websocket_endpoint(
 
     try:
         while True:
-            data = await connection_manager.receive(connection)
+            data = await asyncio.wait_for(connection_manager.receive(connection), timeout=600)
             json_data = json.loads(data)
             conversation_db_obj = None
             conversation_id = json_data.get("conversation_id", None)
@@ -117,6 +118,7 @@ async def websocket_endpoint(
                     obj_in=conversation_obj.model_dump(),
                     model=models.Conversation,
                 )
+                conversation_id = conversation_db_obj.id
 
             if conversation_db_obj:
                 await connection_manager.update_connection(
@@ -152,6 +154,9 @@ async def websocket_endpoint(
                 message = "Root Connection Not Established! Please Try Again Later."
 
             await connection_manager.send_personal_json(
+                client_id=str(client_id),
+                conversation_id=str(conversation_id),
+                client_port=client_port,
                 data={
                     "message": message,
                     "conversation_id": str(conversation_db_obj.id),
@@ -170,6 +175,12 @@ async def websocket_endpoint(
         await connection_manager.disconnect(
             connection,
         )
+    
+    except asyncio.TimeoutError:
+        print("Timeout while waiting for data")
+        await connection_manager.disconnect(
+            connection,
+        )
 
 
 @app.websocket(
@@ -180,33 +191,24 @@ async def websocket_endpoint_root(
 ):
     await connection_manager.connect(connection, type="root")
     if connection_manager.root_connection:
-        await connection_manager.send_root(
-            data={
-                "message": "You are now connected as a root user.",
-            },
-        )
+       await connection_manager.send_root(
+           data={
+               "message": "You are now connected as a root user.",
+           },
+       )
     try:
         while True:
             data = await connection_manager.receive_root()
+            print(data, "-------------RECEIVE ROOT 1--------------------")
             json_data = json.loads(data)
+            if json_data.get("message") == "PING":
+                continue
             conversation_id = json_data.get("conversation_id", None)
             message = json_data.get("message", None)
             message_id = json_data.get("message_id", None)
             client_id = json_data.get("client_id", None)
             client_port = json_data.get("client_port", None)
             status = json_data.get("status", "FAILED")
-
-            # await connection_manager.send_root(
-            #     data={
-            #         "message": message,
-            #         "conversation_id": conversation_id,
-            #         "message_id": message_id,
-            #         "client_id": str(client_id),
-            #         "client_port": client_port,
-            #         "time": int(datetime.now().timestamp() * 1000),
-            #         "sender": "AI",
-            #     },
-            # )
 
             await connection_manager.send_personal_json(
                 client_id=str(client_id),
