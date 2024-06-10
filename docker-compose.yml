@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+
+  db:
+    container_name: chat_db
+    image: postgres:15.5-bullseye
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres",
+          "-d",
+          "postgres"
+        ]
+      interval: 10s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
+  chat_backend:
+    container_name: chat_backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./dist:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+  
+volumes:
+  pg_data:
+    name: chat_pg_data
